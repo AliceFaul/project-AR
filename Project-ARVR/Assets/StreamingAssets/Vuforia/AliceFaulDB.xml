@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<QCARConfig>
+  <Tracking>
+    <ImageTarget name="DriveDocument" size="5.000000 7.412037" />
+    <ImageTarget name="Notebook" size="5.000000 7.328704" />
+  </Tracking>
+</QCARConfig>
