@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour {
@@ -118,6 +118,36 @@ public class GameManager : MonoBehaviour {
                 }
             }
             EnemiesInstance = null; // Clear the reference to the enemies array
+        }
+    }
+
+
+    // Hàm để gán vào nút Jump trên màn hình
+    public void OnJumpButtonPressed()
+    {
+        if (PlayerInstance != null)
+        {
+            // Lấy script PlayerController (Movement) từ nhân vật đang đứng trong AR
+            PlayerMovement pc = PlayerInstance.GetComponent<PlayerMovement>();
+            if (pc != null) pc.Jump();
+        }
+    }
+
+    // Hàm để gán vào nút Attack trên màn hình
+    public void OnAttackButtonPressed()
+    {
+        if (PlayerInstance != null)
+        {
+            PlayerAttack pa = PlayerInstance.GetComponent<PlayerAttack>();
+
+            if (pa != null)
+            {
+                pa.Attack(); // Gọi hàm Attack ở script riêng 
+            }
+            else
+            {
+                Debug.LogWarning("Nhân vật chưa được gắn script PlayerAttack rồi!");
+            }
         }
     }
 }

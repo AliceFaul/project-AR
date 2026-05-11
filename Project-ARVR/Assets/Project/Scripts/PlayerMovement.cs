@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
-public class PlayerController : MonoBehaviour
+public class PlayerMovement: MonoBehaviour
 {
     [Header("Input Settings")]
     public Joystick joystick;
@@ -10,6 +10,10 @@ public class PlayerController : MonoBehaviour
     public float moveSpeed = 5f;
     public float rotationTurnTime = 0.1f; // Thời gian để xoay nhân vật
     public float gravity = -9.81f;
+
+    [Header("Jump Settings")]
+    public float jumpHeight = 1.5f; // Thêm biến độ cao nhảy
+    public Animator animator;      // Thêm biến gọi Animation nhảy
 
     private CharacterController controller;
     private Vector3 velocity;
@@ -41,7 +45,7 @@ public class PlayerController : MonoBehaviour
 
         Vector3 moveDirection = new Vector3(horizontal, 0, vertical).normalized;
 
-        // Kiểm tra Joystick có đang được kéo đủ mạnh không (tránh bị nhiễu)
+        // Kiểm tra Joystick có được kéo đủ mạnh không (tránh bị nhiễu)
         if (moveDirection.magnitude >= 0.1f)
         {
             // Tính toán góc xoay dựa trên hướng Joystick và hướng Camera
@@ -57,8 +61,30 @@ public class PlayerController : MonoBehaviour
             // Di chuyển với vận tốc tỉ lệ thuận với độ kéo của Joystick
             float currentSpeed = moveSpeed * moveDirection.magnitude;
             controller.Move(targetMoveDir * currentSpeed * Time.deltaTime);
+
+            // Cập nhật Animation chạy (nếu bạn có dùng parameter "Speed")
+            if (animator != null) animator.SetFloat("Speed", moveDirection.magnitude);
+        }
+        else
+        {
+            if (animator != null) animator.SetFloat("Speed", 0);
         }
     }
+
+    public void Jump()
+    {
+        if (controller.isGrounded)
+        {
+            // Tính toán lực nhảy dựa trên trọng lực và độ cao mong muốn
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+
+            if (animator != null)
+            {
+                animator.SetTrigger("Jump"); // Kích hoạt Trigger Jump trong Animator
+            }
+        }
+    }
+    // ----------------------
 
     void ApplyGravity()
     {
