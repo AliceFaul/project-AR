@@ -10,6 +10,12 @@ public class EnemyAI : MonoBehaviour
 
     private float lastAttackTime;
 
+    private void Start() {
+        if (player == null) {
+            player = GameObject.FindGameObjectWithTag("Player").transform;
+        }
+    }
+
     void Update()
     {
         if (player == null) return;
@@ -24,6 +30,7 @@ public class EnemyAI : MonoBehaviour
                 player.position,
                 speed * Time.deltaTime
             );
+            transform.rotation = Quaternion.LookRotation(Vector3.forward, player.position - transform.position);
         }
         else
         {
@@ -35,14 +42,16 @@ public class EnemyAI : MonoBehaviour
     {
         if (Time.time >= lastAttackTime + attackCooldown)
         {
-            PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
-
-            if (playerHealth != null)
-            {
+            IDamageable playerHealth = player.GetComponent<IDamageable>();
+            if(playerHealth != null) {
                 playerHealth.TakeDamage(damage);
             }
-
             lastAttackTime = Time.time;
         }
+    }
+
+    private void OnDrawGizmosSelected() {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, attackRange);
     }
 }

@@ -4,7 +4,7 @@
 public class PlayerMovement: MonoBehaviour
 {
     [Header("Input Settings")]
-    public Joystick joystick;
+    public FixedJoystick joystick;
 
     [Header("Movement Settings")]
     public float moveSpeed = 5f;
@@ -23,11 +23,18 @@ public class PlayerMovement: MonoBehaviour
     void Start()
     {
         controller = GetComponent<CharacterController>();
-        cameraTransform = Camera.main.transform;
 
         if (joystick == null)
         {
-            Debug.LogError("Chưa kéo thả Joystick vào PlayerController");
+            joystick = FindFirstObjectByType<FixedJoystick>();
+        }
+        if (Camera.main != null)
+        {
+            cameraTransform = Camera.main.transform;
+        }
+        else
+        {
+            Debug.LogError("Main Camera not found!");
         }
     }
 
@@ -39,6 +46,7 @@ public class PlayerMovement: MonoBehaviour
 
     void MovePlayer()
     {
+        if (joystick == null) return;
         // Lấy dữ liệu trực tiếp từ Joystick
         float horizontal = joystick.Horizontal;
         float vertical = joystick.Vertical;

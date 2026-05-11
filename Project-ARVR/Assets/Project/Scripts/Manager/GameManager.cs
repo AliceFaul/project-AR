@@ -1,5 +1,7 @@
-﻿using System.Collections;
-using UnityEngine;
+﻿using UnityEngine;
+using System.Collections.Generic;
+using System.Collections;
+using TMPro;
 
 public class GameManager : MonoBehaviour {
     public static GameManager Instance { get; private set; }
@@ -10,17 +12,27 @@ public class GameManager : MonoBehaviour {
     [Header("Player and Enemies Config")]
     public GameObject playerPrefab;
     public Transform playerSpawnPoint;
-    public GameObject enemiesPrefab;
+    public GameObject[] enemiesPrefab;
     public Transform[] enemiesSpawnPoint;
     public int numberOfEnemies = 3;
 
     [Header("Game Status")]
     private bool _isGameOver = false;
     public int score = 0;
+    public int enemyCount = 0;
     public GameObject gameOverContainer;
+    public TMP_Text enemyLeftContainer;
+
+    [Header("UI")]
+    public GameObject tapToPlay;
+    public GameObject foundTarget;
+    public GameObject lostTarget;
+    public GameObject hud;
 
     public GameObject PlayerInstance;
-    public GameObject[] EnemiesInstance;
+    public List<GameObject> enemies = new List<GameObject>();
+
+    private const string enemyLeft = "Enemy Left: ";
 
     private void Awake() {
         if (Instance == null) {
@@ -29,6 +41,12 @@ public class GameManager : MonoBehaviour {
         } else {
             Destroy(gameObject);
         }
+
+        // Ensure the game over UI is hidden at the start
+        hud.SetActive(false);
+        foundTarget.SetActive(true);
+        lostTarget.SetActive(false);
+        tapToPlay.SetActive(false);
     }
 
     //private IEnumerator Start() {
@@ -56,49 +74,84 @@ public class GameManager : MonoBehaviour {
     //    }
     //}
 
+    // Testing spawn player and enemies without AR target detection
+    //private void Start()
+    //{
+    //    gameOverContainer.SetActive(false); // Ensure game over UI is hidden at the start
+    //    enemyLeftContainer.text = enemyLeft + enemyCount; // Initialize enemy left text
+    //    SpawnPlayer(); // Spawn player immediately for testing
+    //    InvokeRepeating(nameof(SpawnEnemies), 3f, 5f); // Start spawning enemies every 5 seconds after a 3-second delay
+    //}
+
     // Called when the AR target is found
     public void OnTargetFound() { 
+        foundTarget.SetActive(false);
+        lostTarget.SetActive(false);
+        tapToPlay.SetActive(true);
+        StartCoroutine(WaitingTapToPlay()); // Wait for player to tap before starting the game
         Debug.Log("Target found, spawning player and enemies.");
-        Invoke(nameof(SpawnPlayer), 5f); // Spawn player in 5 seconds
-        InvokeRepeating(nameof(SpawnEnemies), 5f, 10f); // Spawn enemies every 10 seconds after 5 seconds
+        gameOverContainer.SetActive(false);
+        enemyLeftContainer.text = enemyLeft + enemyCount; // Initialize enemy left text
     }
 
     // Called when the AR target is lost
     public void OnTargetLost() { 
+        lostTarget.SetActive(true);
+        tapToPlay.SetActive(false);
+        foundTarget.SetActive(false);
         Debug.Log("Target lost, cleaning up player and enemies.");
-        ClearPlayerAndEnemies(); // Clear player and enemies from the scene
-        CancelInvoke(nameof(SpawnPlayer)); // Cancel any pending player spawn
         CancelInvoke(nameof(SpawnEnemies)); // Cancel any pending enemy spawns
+        ClearPlayerAndEnemies(); // Clear player and enemies from the scene
     }
 
-    private void SpawnPlayer() { 
+    IEnumerator WaitingTapToPlay() { 
+        yield return new WaitUntil(() => Input.GetMouseButtonDown(0)); // Wait until the player taps the screen
+        tapToPlay.SetActive(false);
+        hud.SetActive(true); // Show the HUD after tapping to play
+        SpawnPlayer(); // Spawn the player when the target is found
+        InvokeRepeating(nameof(SpawnEnemies), 3f, 5f); // Start spawning enemies every 5 seconds after a 3-second delay
+    }
+
+    private void SpawnPlayer() {
+        if(PlayerInstance != null) return; // Avoid spawning multiple players if the target is found again before losing it
         PlayerInstance = Instantiate(playerPrefab, 
             playerSpawnPoint.position, playerSpawnPoint.rotation);
         PlayerInstance.transform.SetParent(imageTarget.transform); // Parent the player to the image target for AR tracking
     }
 
     private void SpawnEnemies() {
-        EnemiesInstance = new GameObject[numberOfEnemies];
-        for(int i = 0; i < numberOfEnemies; i++) { 
-            EnemiesInstance[i] = Instantiate(enemiesPrefab,
-                enemiesSpawnPoint[i].position, enemiesSpawnPoint[i].rotation);
-            EnemiesInstance[i].transform.SetParent(imageTarget.transform); // Parent the enemies to the image target for AR tracking
-        }
+        RemoveEnemies(); // Clean up any destroyed enemies before spawning new ones
+        if(enemies.Count >= numberOfEnemies) return;
+
+        int randomIndex = Random.Range(0, enemiesSpawnPoint.Length);
+        int randomEnemyIndex = Random.Range(0, enemiesPrefab.Length);
+
+        GameObject enemy = Instantiate(enemiesPrefab[randomEnemyIndex],
+            enemiesSpawnPoint[randomIndex].position, enemiesSpawnPoint[randomIndex].rotation);
+        enemy.transform.SetParent(imageTarget.transform); // Parent the enemy to the image target for AR tracking
+        enemies.Add(enemy); // Add the new enemy to the list
+        AdjustEnemyLeft(1); // Increment the enemy left count
+        Debug.Log("Spawned enemy: " + enemy.name + " at position: " + enemy.transform.position);
     }
 
+    public void RemoveEnemies() 
+        => enemies.RemoveAll(enemy => enemy == null); // Remove destroyed enemies from the list
+
     public void GameOver() { 
+        if(_isGameOver) return; // Prevent multiple game over triggers
         Handheld.Vibrate(); // Vibrate the device to indicate game over
         _isGameOver = true;
+        CancelInvoke(nameof(SpawnEnemies)); // Stop spawning new enemies
         ClearPlayerAndEnemies(); // Clear player and enemies from the scene
-        Time.timeScale = 0f; // Pause the game
         gameOverContainer.SetActive(true);
     }
 
     public void RestartGame() { 
-        Time.timeScale = 1f; // Resume the game
         gameOverContainer.SetActive(false);
         score = 0; // Reset score
         _isGameOver = false;
+        SpawnPlayer(); // Respawn player
+        InvokeRepeating(nameof(SpawnEnemies), 3f, 5f); // Restart spawning enemies
     }
 
     // Method to adjust the score, can be called from other scripts when player scores points
@@ -107,18 +160,25 @@ public class GameManager : MonoBehaviour {
         Debug.Log("Score adjusted: " + score);
     }
 
+    public void AdjustEnemyLeft(int amount) { 
+        Debug.Log(enemyLeft + amount);
+        enemyCount += amount;
+        enemyCount = Mathf.Max(enemyCount, 0); // Ensure enemy count doesn't go negative
+        enemyLeftContainer.text = enemyLeft + enemyCount;
+    }
+
     public void ClearPlayerAndEnemies() { 
+        // Clear player
         if (PlayerInstance != null) { 
             Destroy(PlayerInstance);
         }
-        if(EnemiesInstance != null) { 
-            foreach(var enemy in EnemiesInstance) { 
-                if(enemy != null) { 
-                    Destroy(enemy);
-                }
+        // Clear enemies
+        foreach (GameObject enemy in enemies) { 
+            if (enemy != null) {
+                Destroy(enemy);
             }
-            EnemiesInstance = null; // Clear the reference to the enemies array
         }
+        enemies.Clear(); // Clear the list of enemies
     }
 
 
