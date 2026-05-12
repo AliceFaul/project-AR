@@ -2737,13 +2737,13 @@ MonoBehaviour:
   PreviewVisible: 1
   RuntimeOcclusion: 0
   RuntimeCollider: 0
-  mTrackableName: Notebook
+  mTrackableName: DriveDocument
   mInitializedInEditor: 1
   mDataSetPath: Vuforia/AliceFaulDB.xml
-  mAspectRatio: 1.4657408
+  mAspectRatio: 1.4824073
   mImageTargetType: 0
   mWidth: 5
-  mHeight: 7.328704
+  mHeight: 7.412037
   mRuntimeTexture: {fileID: 0}
   mMotionHint: 1
   mTrackingOptimization: 0
@@ -2778,7 +2778,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mObserverBehaviour: {fileID: 1329811540}
   mHiddenRoot: {fileID: 0}
-  mTargetName: Notebook
+  mTargetName: DriveDocument
   mDatasetName: Vuforia/AliceFaulDB.xml
   mCastedBehaviour: {fileID: 1329811540}
   mMeshFilter: {fileID: 0}
