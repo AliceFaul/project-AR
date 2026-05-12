@@ -99,6 +99,7 @@ public class GameManager : MonoBehaviour {
         lostTarget.SetActive(true);
         tapToPlay.SetActive(false);
         foundTarget.SetActive(false);
+        hud.SetActive(false);
         Debug.Log("Target lost, cleaning up player and enemies.");
         CancelInvoke(nameof(SpawnEnemies)); // Cancel any pending enemy spawns
         ClearPlayerAndEnemies(); // Clear player and enemies from the scene
